@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
 }
 
+version = "0.1.0"
+
 repositories {
     mavenCentral()
     google()
@@ -36,7 +38,10 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg)
             packageName = "CleanMac"
-            packageVersion = "1.0.0"
+            // macOS packages require MAJOR >= 1, so 0.y.z ships as 1.y.z
+            packageVersion = project.version.toString().let { v ->
+                v.split(".").let { p -> if (p[0] == "0") "1.${p[1]}.${p[2]}" else v }
+            }
         }
     }
 }
