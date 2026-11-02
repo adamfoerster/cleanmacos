@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
 }
 
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()

@@ -24,12 +24,23 @@ class CleanState(private val scope: CoroutineScope, private val scanner: Scanner
     val checked = mutableStateMapOf<String, Boolean>()
 
     val selectedSub get() = subs.firstOrNull { it.id == selectedSubId } ?: subs.firstOrNull()
-    private val allItems get() = subs.flatMap { it.items }
+    private val allItems get() = subs.flatMap { it.items }.flatMap { it.leaves }
     val selectedItems get() = allItems.filter { checked[it.id] == true }
     val selectedBytes get() = selectedItems.sumOf { it.size }
 
     fun sorted(items: List<CleanItem>) =
         if (sortBy == SortBy.Size) items.sortedByDescending { it.size } else items.sortedBy { it.name.lowercase() }
+
+    /** null = partially selected. */
+    fun checkState(item: CleanItem): Boolean? {
+        val states = item.leaves.map { checked[it.id] == true }
+        return if (states.all { it }) true else if (states.none { it }) false else null
+    }
+
+    fun toggle(item: CleanItem) {
+        val on = checkState(item) != true
+        item.leaves.forEach { checked[it.id] = on }
+    }
 
     fun scan() {
         if (scanning) return
@@ -39,13 +50,13 @@ class CleanState(private val scope: CoroutineScope, private val scanner: Scanner
             subs = r.subCategories
             permissionDenied = r.permissionDenied
             checked.clear()
-            r.subCategories.flatMap { it.items }.forEach { checked[it.id] = it.selectedByDefault }
+            r.subCategories.flatMap { it.items }.flatMap { it.leaves }.forEach { checked[it.id] = it.selectedByDefault }
             scanning = false
         }
     }
 
     fun select(sub: SubCategory, mode: String) {
-        sub.items.forEach { checked[it.id] = mode == "all" || (mode == "smart" && it.selectedByDefault) }
+        sub.items.flatMap { it.leaves }.forEach { checked[it.id] = mode == "all" || (mode == "smart" && it.selectedByDefault) }
     }
 
     fun clean() {

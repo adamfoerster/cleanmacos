@@ -3,7 +3,7 @@
 Free, open-source alternative to CleanMyMac's space-freeing "Cleanup Manager" for macOS. Kotlin + Compose Desktop.
 
 ## Features
-- Scans and lists reclaimable space: Xcode junk (Derived Data, Device Support, Archives, Products, Simulator caches), user caches, user logs, Trash, Mail downloads.
+- Scans and lists reclaimable space: Xcode junk (Derived Data, Device Support, Archives, Products, Simulator caches; folders like Device Support expand so you can pick individual devices/versions), user caches, user logs, Trash, Mail downloads.
 - Per-item checkboxes, "Smartly / All / None" selection, sort by size or name.
 - Confirmation before deleting; reports freed space afterwards.
 - Safe deletion: only inside an allowlist of folders, never follows symlinks.

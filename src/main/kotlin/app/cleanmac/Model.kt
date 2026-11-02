@@ -14,7 +14,11 @@ data class CleanItem(
     val path: Path,
     val size: Long,
     val selectedByDefault: Boolean,
-)
+    val children: List<CleanItem> = emptyList(),
+) {
+    /** The items that are actually deleted: the item itself, or its children when it has any. */
+    val leaves: List<CleanItem> get() = if (children.isEmpty()) listOf(this) else children.flatMap { it.leaves }
+}
 
 data class SubCategory(
     val id: String,

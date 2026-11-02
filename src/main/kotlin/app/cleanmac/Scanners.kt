@@ -40,16 +40,24 @@ class Scanner(private val home: Path = Path.of(System.getProperty("user.home")))
         }
     }
 
-    private suspend fun sized(items: List<CleanItem>): List<CleanItem> = coroutineScope {
-        items.map { async(Dispatchers.IO) { it.copy(size = sizeOf(it.path)) } }
+    private suspend fun sized(items: List<CleanItem>, keepSized: Boolean = false): List<CleanItem> = coroutineScope {
+        items.map { async(Dispatchers.IO) { if (keepSized && it.children.isNotEmpty()) it else it.copy(size = sizeOf(it.path)) } }
             .map { it.await() }
             .filter { it.size > 0 }
+    }
+
+    /** Splits a folder item into individually selectable children (e.g. one per device or runtime version). */
+    internal suspend fun withChildren(item: CleanItem): CleanItem {
+        val kids = sized(children(item.path, item.selectedByDefault, item.id))
+        if (kids.isEmpty()) return item
+        return item.copy(size = kids.sumOf { it.size }, children = kids.sortedByDescending { it.size })
     }
 
     suspend fun scan(): ScanResult = withContext(Dispatchers.IO) {
         denied = false
         val xcode = lib.resolve("Developer/Xcode")
         // Heavy or irreplaceable items are not pre-selected.
+        val splittable = setOf("xc-derived", "xc-devsupport", "xc-watch", "xc-archives")
         val xcodeItems = buildList {
             add(CleanItem("xc-derived", "Derived Data", xcode.resolve("DerivedData"), 0, true))
             add(CleanItem("xc-devsupport", "iOS Device Support", xcode.resolve("iOS DeviceSupport"), 0, false))
@@ -58,11 +66,12 @@ class Scanner(private val home: Path = Path.of(System.getProperty("user.home")))
             add(CleanItem("xc-products", "Products", xcode.resolve("Products"), 0, true))
             add(CleanItem("xc-simcache", "Simulator Caches", lib.resolve("Developer/CoreSimulator/Caches"), 0, true))
         }.filter { it.path.exists() }
+            .map { if (it.id in splittable) withChildren(it) else it }
 
         val subs = listOf(
             SubCategory("xcode", "Xcode Junk",
                 "Xcode generates a significant amount of intermediate build information and project index.",
-                Group.SystemJunk, sized(xcodeItems)),
+                Group.SystemJunk, sized(xcodeItems, keepSized = true)),
             SubCategory("usercache", "User Cache Files",
                 "Temporary files apps keep to load faster. They are recreated when needed.",
                 Group.SystemJunk, sized(children(lib.resolve("Caches")))),

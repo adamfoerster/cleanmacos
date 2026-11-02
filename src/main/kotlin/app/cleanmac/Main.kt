@@ -135,14 +135,24 @@ private fun ItemPane(s: CleanState, modifier: Modifier) = Column(modifier.paddin
     }
     LazyColumn(Modifier.padding(horizontal = 12.dp)) {
         items(s.sorted(sub.items), key = { it.id }) { item ->
-            Row(Modifier.fillMaxWidth().clickable { s.checked[item.id] = s.checked[item.id] != true }, verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(s.checked[item.id] == true, { s.checked[item.id] = it })
-                Column(Modifier.weight(1f)) {
-                    Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Text(formatSize(item.size), color = Muted)
-                Spacer(Modifier.width(12.dp))
-            }
+            var open by remember(item.id) { mutableStateOf(false) }
+            ItemRow(s, item, 0, open, if (item.children.isEmpty()) null else { { open = !open } })
+            if (open) s.sorted(item.children).forEach { ItemRow(s, it, 1, false, null) }
         }
+    }
+}
+
+@Composable
+private fun ItemRow(s: CleanState, item: CleanItem, depth: Int, open: Boolean, onExpand: (() -> Unit)?) {
+    Row(Modifier.fillMaxWidth().padding(start = (depth * 32).dp).clickable { s.toggle(item) }, verticalAlignment = Alignment.CenterVertically) {
+        TriStateCheckbox(
+            when (s.checkState(item)) { true -> androidx.compose.ui.state.ToggleableState.On; false -> androidx.compose.ui.state.ToggleableState.Off; null -> androidx.compose.ui.state.ToggleableState.Indeterminate },
+            { s.toggle(item) },
+        )
+        Column(Modifier.weight(1f)) {
+            Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Text(formatSize(item.size), color = Muted)
+        if (onExpand != null) TextButton(onClick = onExpand) { Text(if (open) "▾" else "▸") } else Spacer(Modifier.width(12.dp))
     }
 }
