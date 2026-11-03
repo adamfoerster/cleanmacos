@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 
 enum class SortBy { Size, Name }
 
-class CleanState(private val scope: CoroutineScope, private val scanner: Scanner = Scanner()) {
+class CleanState(private val scope: CoroutineScope, private val scanner: Scanner = Scanner(), private val runtimes: RuntimeManager = SimctlRuntimes) {
     private val cleaner = Cleaner(scanner.allowedRoots)
 
     var subs by mutableStateOf<List<SubCategory>>(emptyList())
@@ -69,7 +69,7 @@ class CleanState(private val scope: CoroutineScope, private val scanner: Scanner
             withContext(Dispatchers.IO) {
                 items.forEach {
                     try {
-                        freed += cleaner.delete(it.path)
+                        freed += it.runtime?.let(runtimes::delete) ?: cleaner.delete(it.path)
                     } catch (e: Exception) {
                         errors += "${it.name}: ${e.message}"
                     }

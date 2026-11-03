@@ -12,7 +12,10 @@ import kotlin.io.path.name
 
 class ScanResult(val subCategories: List<SubCategory>, val permissionDenied: Boolean)
 
-class Scanner(private val home: Path = Path.of(System.getProperty("user.home"))) {
+class Scanner(
+    private val home: Path = Path.of(System.getProperty("user.home")),
+    private val runtimes: RuntimeManager = SimctlRuntimes,
+) {
     private val lib = home.resolve("Library")
 
     /** Roots the Cleaner is allowed to delete from. */
@@ -68,10 +71,16 @@ class Scanner(private val home: Path = Path.of(System.getProperty("user.home")))
         }.filter { it.path.exists() }
             .map { if (it.id in splittable) withChildren(it) else it }
 
+        val rts = runtimes.list()
+        val runtimeItem = if (rts.isEmpty()) null else CleanItem(
+            "xc-runtimes", "Xcode Simulators Runtime", home, rts.sumOf { it.size }, false,
+            children = rts.map { CleanItem("rt-${it.id}", "${it.name} (${it.build})", home, it.size, false, runtime = it) },
+        )
+
         val subs = listOf(
             SubCategory("xcode", "Xcode Junk",
                 "Xcode generates a significant amount of intermediate build information and project index.",
-                Group.SystemJunk, sized(xcodeItems, keepSized = true)),
+                Group.SystemJunk, (listOfNotNull(runtimeItem) + sized(xcodeItems, keepSized = true)).sortedByDescending { it.size }),
             SubCategory("usercache", "User Cache Files",
                 "Temporary files apps keep to load faster. They are recreated when needed.",
                 Group.SystemJunk, sized(children(lib.resolve("Caches")))),

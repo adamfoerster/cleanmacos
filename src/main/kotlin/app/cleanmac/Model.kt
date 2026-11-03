@@ -15,6 +15,8 @@ data class CleanItem(
     val size: Long,
     val selectedByDefault: Boolean,
     val children: List<CleanItem> = emptyList(),
+    /** Set for simulator runtimes, which are deleted via simctl instead of the file system. */
+    val runtime: SimRuntime? = null,
 ) {
     /** The items that are actually deleted: the item itself, or its children when it has any. */
     val leaves: List<CleanItem> get() = if (children.isEmpty()) listOf(this) else children.flatMap { it.leaves }

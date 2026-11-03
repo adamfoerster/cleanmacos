@@ -8,7 +8,9 @@ Free, open-source alternative to CleanMyMac's space-freeing "Cleanup Manager" fo
 - Confirmation before deleting; reports freed space afterwards.
 - Safe deletion: only inside an allowlist of folders, never follows symlinks.
 
-Not included: simulator runtimes, system-level caches/logs (need admin), language files, universal binaries.
+Simulator runtimes (iOS etc.) are listed individually and removed with `xcrun simctl runtime delete` (not by file deletion, so `Cleaner`/`allowedRoots` are untouched); none are pre-selected.
+
+Not included: system-level caches/logs (need admin), language files, universal binaries.
 
 ## Requirements
 - macOS, JDK 21+ (tested up to 21; JDK 25 supported by the build, bytecode targets 21)
